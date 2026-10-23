@@ -19,6 +19,14 @@
       "dest": "/api/index.js"
     },
     {
+      "src": "/app.js",
+      "dest": "/public/app.js"
+    },
+    {
+      "src": "/style.css",
+      "dest": "/public/style.css"
+    },
+    {
       "handle": "filesystem"
     },
     {
