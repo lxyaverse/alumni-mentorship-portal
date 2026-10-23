@@ -1,0 +1,10 @@
+{
+  "name": "alumni-mentorship-portal",
+  "version": "1.0.0",
+  "description": "Alumni Mentorship Portal (CS314, Team T069) - Express + SQLite + vanilla JS client",
+  "main": "server.js",
+  "scripts": { "start": "node server.js", "dev": "DEMO=1 node server.js", "seed": "node -e \"require('./db').seed(true)\"" },
+  "engines": { "node": ">=18" },
+  "dependencies": { "bcryptjs": "^2.4.3", "better-sqlite3": "^11.3.0", "express": "^4.19.2", "jsonwebtoken": "^9.0.2" },
+  "license": "MIT"
+}
