@@ -147,6 +147,19 @@ npm run seed
 
 This recreates the seeded portal data in `data/portal.db`.
 
+## Deploy to Vercel
+
+Import this repository into Vercel with the project root set to the repository root. The included [`vercel.json`](./vercel.json) routes the browser client from `public/` and exposes the Express API through a serverless function.
+
+Add the following environment variables in the Vercel project settings:
+
+```text
+JWT_SECRET=<a-long-random-secret>
+DEMO=0
+```
+
+The SQLite database uses `/tmp` on Vercel because the deployed project filesystem is read-only. That storage is temporary and instance-local, so this deployment is suitable for a demo only. Use a hosted database for persistent production data.
+
 ## Demo accounts
 
 All seeded demo accounts use the password `demo123`.

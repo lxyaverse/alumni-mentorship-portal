@@ -1,6 +1,7 @@
 const Database = require('better-sqlite3'), bcrypt = require('bcryptjs'), fs = require('fs'), path = require('path');
 fs.mkdirSync(path.join(__dirname, 'data'), { recursive: true });
-const db = new Database(process.env.DB_FILE || path.join(__dirname, 'data', 'portal.db'));
+const defaultDb = process.env.VERCEL ? path.join('/tmp', 'portal.db') : path.join(__dirname, 'data', 'portal.db');
+const db = new Database(process.env.DB_FILE || defaultDb);
 db.pragma('journal_mode = WAL'); db.pragma('foreign_keys = ON');
 db.exec(`
 CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY,name TEXT NOT NULL,email TEXT UNIQUE NOT NULL,pw TEXT NOT NULL,role TEXT NOT NULL,
