@@ -149,7 +149,7 @@ This recreates the seeded portal data in `data/portal.db`.
 
 ## Deploy to Vercel
 
-Import this repository into Vercel with the project root set to the repository root. The included [`vercel.json`](./vercel.json) routes the browser client from `public/` and exposes the Express API through a serverless function.
+Import this repository into Vercel with the project root set to the repository root. The included [`vercel.json`](./vercel.json) routes the browser client from `public/`, exposes the Express API through a serverless function, and pins the function to Node.js 20 for native SQLite compatibility.
 
 Add the following environment variables in the Vercel project settings:
 
