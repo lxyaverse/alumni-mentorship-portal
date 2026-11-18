@@ -27,6 +27,10 @@
       "dest": "/public/style.css"
     },
     {
+      "src": "/overlay.js",
+      "dest": "/public/overlay.js"
+    },
+    {
       "handle": "filesystem"
     },
     {
