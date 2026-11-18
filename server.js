@@ -50,7 +50,12 @@ setInterval(expire, 60000);
 // ---- Auth middleware (FR-009, NFR-006 server-side RBAC) ----
 const auth = (...roles) => (req, res, next) => {
   let u;
-  try { u = q1('SELECT * FROM users WHERE id=?', jwt.verify((req.headers.authorization || '').slice(7), SECRET).id); }
+  try {
+    const bearer = (req.headers.authorization || '').startsWith('Bearer ')
+      ? (req.headers.authorization || '').slice(7)
+      : String(req.query?.token || '');
+    u = q1('SELECT * FROM users WHERE id=?', jwt.verify(bearer, SECRET).id);
+  }
   catch { return bad(res, 'Not authenticated', 401); }
   if (!u || !u.active) return bad(res, 'Account inactive', 401);
   if (roles.length && !roles.includes(u.role)) return bad(res, 'Forbidden', 403); // FR-009 / NFR-006
@@ -79,6 +84,8 @@ app.post('/api/register', wrap((req, res) => { // FR-001, FR-002, UC-001
   if (!name || !email || !password) return bad(res, 'Name, email and password are required.');
   if (password.length < 6) return bad(res, 'Password must be at least 6 characters.');
   if (!['student', 'alumnus'].includes(role)) return bad(res, 'Role must be student or alumnus.');
+  if (role === 'alumnus' && (!grad || !String(degree || '').trim() || !String(org || '').trim()))
+    return bad(res, 'Graduation year, degree and current organization are required for alumni registration.');
   if (q1('SELECT 1 FROM users WHERE email=?', email.toLowerCase())) return bad(res, 'Email already registered.', 409);
   run('INSERT INTO users(id,name,email,pw,role,status,grad,degree,org) VALUES(?,?,?,?,?,?,?,?,?)',
     nid('u'), name.trim(), email.toLowerCase().trim(), bcrypt.hashSync(password, 10), role,
@@ -102,10 +109,14 @@ app.put('/api/profile', auth('alumnus'), wrap((req, res) => { // FR-011, FR-012,
   if (req.u.status !== 'verified') return bad(res, 'Only verified alumni can create a mentor profile.', 403); // BR-001
   const b = req.body || {};
   const avail = ['Available', 'Limited', 'Unavailable'].includes(b.avail) ? b.avail : 'Available'; // FR-014
+  const complete = !!(String(b.designation || '').trim() && String(b.org || '').trim() &&
+    String(b.industry || '').trim() && String(b.domain || '').trim() &&
+    String(b.expertise || '').trim() && String(b.intro || '').trim() &&
+    (+b.years >= 0) && (+b.grad > 0));
   run('INSERT OR REPLACE INTO profiles VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',
     req.u.id, b.designation, b.org, b.industry, b.domain, b.expertise,
     +b.years || 0, +b.grad || null, b.intro, avail, Math.max(1, +b.cap || 1), // FR-015
-    b.designation && b.org && b.domain ? 1 : 0);
+    complete ? 1 : 0);
   res.json({ ok: true });
 }));
 
@@ -181,7 +192,18 @@ app.post('/api/requests/:id/respond', auth('alumnus'), wrap((req, res) => { // F
     if (taken(req.u.id) >= (p?.cap || 1)) return bad(res, 'You have reached your mentoring capacity.', 409); // BR-006 / FR-032
   }
   const status = { accept: 'Accepted', decline: 'Declined', refer: 'Referred' }[action];
-  run('UPDATE requests SET status=?,responded=?,reason=? WHERE id=?', status, now(), reason?.trim() || null, r.id);
+  const respondTx = db.transaction(() => {
+    if (action === 'accept') {
+      const p = q1('SELECT * FROM profiles WHERE uid=?', req.u.id);
+      if (taken(req.u.id) >= (p?.cap || 1))
+        throw new Error('MENTOR_CAPACITY');
+    }
+    run('UPDATE requests SET status=?,responded=?,reason=? WHERE id=?', status, now(), reason?.trim() || null, r.id);
+  });
+  try { respondTx(); } catch (e) {
+    if (e.message === 'MENTOR_CAPACITY') return bad(res, 'You have reached your mentoring capacity.', 409);
+    throw e;
+  }
   if (action === 'accept') run('INSERT OR IGNORE INTO audit VALUES(?,?,?)', now(), req.u.name, `Accepted request from ${r.sid}`); // FR-038
   note(r.sid, `Your request "${r.topic}" was ${status.toLowerCase()}${reason ? '. Reason: ' + reason : ''}.`); // FR-052
   res.json({ ok: true });
@@ -195,8 +217,11 @@ app.post('/api/sessions', auth('alumnus'), wrap((req, res) => { // FR-039, FR-04
   if (!r) return bad(res, 'No accepted request found.', 404); // BR-010
   const when = new Date(date + 'T' + time).getTime();
   if (isNaN(when) || when <= now()) return bad(res, 'Session must be scheduled for a future date and time.'); // BR-011
+  const duration = Number(dur);
+  if (!Number.isInteger(duration) || duration < 15 || duration > 480)
+    return bad(res, 'Duration must be between 15 and 480 minutes.');
   const id = nid('s');
-  run('INSERT INTO sessions(id,rid,date,time,dur,link,status) VALUES(?,?,?,?,?,?,?)', id, rid, date, time, +dur || 60, link, 'Scheduled');
+  run('INSERT INTO sessions(id,rid,date,time,dur,link,status) VALUES(?,?,?,?,?,?,?)', id, rid, date, time, duration, link, 'Scheduled');
   note(r.sid, `A session has been scheduled with ${req.u.name} on ${date} at ${time}.`); // FR-053
   res.json({ ok: true, id });
 }));
@@ -261,8 +286,9 @@ app.post('/api/sessions/:id/reschedule', auth(), wrap((req, res) => { // FR-041,
 // Demo only: fast-forward a session's end time
 if (DEMO) {
   app.post('/api/sessions/:id/fastforward', auth('alumnus'), wrap((req, res) => {
-    const s = q1("SELECT * FROM sessions WHERE id=?", req.params.id);
+    const s = q1("SELECT ses.* FROM sessions ses JOIN requests r ON r.id=ses.rid WHERE ses.id=? AND r.mid=?", req.params.id, req.u.id);
     if (!s) return bad(res, 'Session not found', 404);
+    if (s.status !== 'Scheduled') return bad(res, 'Session is not scheduled.', 409);
     run("UPDATE sessions SET date=?,time=? WHERE id=?", new Date(now() - 7200000).toISOString().slice(0,10), '00:00', s.id);
     res.json({ ok: true });
   }));
@@ -347,6 +373,7 @@ app.post('/api/users/:id/toggle', auth('admin'), wrap((req, res) => { // FR-010,
 app.post('/api/users/:id/role', auth('admin'), wrap((req, res) => { // FR-008, BR-017, UC-004
   const r = req.body?.role;
   if (!['student', 'alumnus', 'coordinator', 'admin'].includes(r)) return bad(res, 'Invalid role.');
+  if (req.params.id === req.u.id) return bad(res, 'You cannot change your own role.', 409);
   run('UPDATE users SET role=? WHERE id=?', r, req.params.id);
   audit(req.u.name, `Changed role of ${req.params.id} to ${r}`); // NFR-023
   res.json({ ok: true });

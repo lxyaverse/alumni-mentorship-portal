@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "DEMO=1 node server.js",
+    "dev": "set DEMO=1&& node server.js",
     "seed": "node -e \"require('./db').seed(true)\"",
     "test": "node --test test.js"
   },

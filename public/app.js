@@ -301,7 +301,7 @@ async function vReqs() {
         ${!stu && r.status === 'Accepted' && !r.sessions ? `
           <hr>
           <div data-screen="schedule-session" data-trace="FR-039,FR-040,BR-010,BR-011,UC-015">
-            <b>Schedule Mentorship Session (WF-05 / UC-015):</b>
+            <b>Schedule Mentorship Session:</b>
             <div class="row" style="margin-top:8px">
               <input type="date" id="sd${r.id}" class="date-input" data-trace="FR-040">
               <input type="time" id="st${r.id}" class="time-input" data-trace="FR-040">
@@ -348,7 +348,7 @@ async function vSessions() {
           ` : ''}
 
           ${stu && s.status === 'Completed' && !s.hasFeedback ? `
-            <button class="p give-feedback" data-trace="FR-046,BR-013,UC-018" onclick="feedbackForm('${s.id}')">Give Feedback (WF-07)</button>
+            <button class="p give-feedback" data-trace="FR-046,BR-013,UC-018" onclick="feedbackForm('${s.id}')">Give Feedback</button>
           ` : ''}
 
           ${stu && s.hasFeedback ? `
@@ -529,7 +529,7 @@ async function vAdmin() {
 
   ${user.role === 'admin' ? `
     <div data-screen="categories-admin" data-trace="FR-060,UC-004">
-      <h3>Domain Categories Management (FR-060)</h3>
+      <h3>Domain Categories Management</h3>
       <div class="card cat-list" data-trace="FR-060">
         <div class="row" style="margin-bottom:12px">
           <input id="new-cat" placeholder="Add new domain category...">
@@ -547,7 +547,7 @@ async function vAdmin() {
     </div>
 
     <div data-screen="users-admin" data-trace="FR-008,FR-010,FR-057,BR-017,BR-018,UC-004,NFR-023">
-      <h3>Registered Users & Roles (FR-057)</h3>
+      <h3>Registered Users & Roles</h3>
       <div class="card user-table" data-trace="FR-057">
         <table>
           <thead><tr><th>Name</th><th>Role</th><th>Status</th><th>Toggle Active</th><th>Change Role</th></tr></thead>
@@ -577,7 +577,7 @@ async function vAdmin() {
     </div>
 
     <div data-screen="audit-log" data-trace="FR-061,NFR-023,NFR-024,UC-004">
-      <h3>System Audit Log (FR-061 / NFR-023)</h3>
+      <h3>System Audit Log</h3>
       <div class="card audit-table" data-trace="FR-061,NFR-023">
         ${au.length ? au.map(l => `
           <div class="mu" style="padding:6px 0;border-bottom:1px solid var(--bd)">
@@ -764,14 +764,14 @@ function vAuth() {
         <div class="row">
           <span class="tag">Verified Alumni</span>
           <span class="tag">Structured Sessions</span>
-          <span class="tag">Requirements Traceability Overlay</span>
+          <span class="tag">Role-Based Access</span>
         </div>
       </div>
       <div class="hero-art">
-        <div class="eyebrow" style="color:#b9f1e9">LIVE DEMO READY</div>
+        <div class="eyebrow" style="color:#b9f1e9">AIM · LNMIIT</div>
         <div class="orbit-card">
-          <b>Press Alt+? at any point for keyboard shortcuts.</b>
-          <div class="mu" style="color:#d9f3f0;margin-top:5px">Real-time FR, NFR, BR overlays & live Use Case panel.</div>
+          <b>Mentorship that moves careers forward.</b>
+          <div class="mu" style="color:#d9f3f0;margin-top:5px">Verified mentors. Structured sessions. Meaningful outcomes.</div>
         </div>
       </div>
     </section>
@@ -779,7 +779,7 @@ function vAuth() {
     <div class="auth-grid">
       <div class="card">
         <form onsubmit="event.preventDefault();login(val('le'),val('lp'))">
-          <h3>Sign In (UC-003 / FR-004)</h3>
+          <h3>Sign In</h3>
           <p class="mu">Authenticate to access role-based mentorship features.</p>
           <label>Email Address</label>
           <input id="le" data-trace="FR-004" type="email" required placeholder="you@example.com">
@@ -801,8 +801,8 @@ function vAuth() {
 
       <div class="card">
         <form onsubmit="event.preventDefault();register()">
-          <h3>Create Account (UC-001 / FR-001)</h3>
-          <p class="mu">Alumni registrations are placed in pending verification state (FR-002).</p>
+          <h3>Create Account</h3>
+          <p class="mu">Alumni registrations remain pending until a coordinator verifies them.</p>
           <label>Full name *</label>
           <input id="rn" data-trace="FR-001" required placeholder="Your full name">
           <label>Email *</label>
@@ -814,7 +814,7 @@ function vAuth() {
             <option value="student">Student</option>
             <option value="alumnus">Alumnus</option>
           </select>
-          <label>Alumni only: graduation year / degree / organization (FR-002)</label>
+          <label>Alumni only: graduation year / degree / organization</label>
           <div class="row">
             <input id="rg" data-trace="FR-002" type="number" placeholder="2020">
             <input id="rd" data-trace="FR-002" placeholder="B.Tech CSE">

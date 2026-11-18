@@ -8,6 +8,7 @@
     'Alt+n': { action: 'TOGGLE_NFR', desc: 'Toggle Non-Functional Requirements chips & badges (green)' },
     'Alt+b': { action: 'TOGGLE_BR', desc: 'Toggle Business Rules overlay (orange badges & enforcement info)' },
     'Alt+u': { action: 'TOGGLE_UC', desc: 'Toggle Use Case side panel with Primary Actor & step tracking' },
+    'Alt+h': { action: 'TOGGLE_HINT', desc: 'Toggle floating bottom shortcut hint bar' },
     'Alt+a': { action: 'TOGGLE_ALL', desc: 'Toggle all overlays simultaneously' },
     'Alt+t': { action: 'OPEN_DASHBOARD', desc: 'Open / close Traceability Dashboard' },
     'Alt+?': { action: 'OPEN_HELP', desc: 'Show keyboard shortcuts cheat-sheet' },
@@ -18,16 +19,12 @@
     'Escape': { action: 'CLOSE_ALL', desc: 'Close all overlays, panels, and modals' },
   };
 
-  // State persists per session in sessionStorage
+  // Overlay state is intentionally non-persistent so the evaluator view starts clean.
   const defaultState = { fr: false, nfr: false, br: false, uc: false, log: false };
   let overlayState = { ...defaultState };
-  try {
-    const saved = sessionStorage.getItem('amp_overlay_state');
-    if (saved) overlayState = Object.assign(overlayState, JSON.parse(saved));
-  } catch(e) {}
 
   function saveState() {
-    try { sessionStorage.setItem('amp_overlay_state', JSON.stringify(overlayState)); } catch(e) {}
+    // Intentionally not persisted: evaluator view must always start clean.
   }
 
   // Cross-tab communication channel
@@ -542,7 +539,10 @@
     overlayState.nfr = false;
     overlayState.br = false;
     overlayState.uc = false;
+    overlayState.log = false;
     saveState();
+    const hintBar = document.getElementById('trace-hint-bar');
+    if (hintBar) hintBar.style.display = 'none';
     const helpModal = document.getElementById('trace-help-modal');
     if (helpModal) helpModal.style.display = 'none';
     const detailDrawer = document.getElementById('trace-detail-drawer');
@@ -579,7 +579,10 @@
     if (altCombo === 'Alt+h') {
       e.preventDefault();
       const bar = document.getElementById('trace-hint-bar');
-      if (bar) bar.style.display = bar.style.display === 'none' ? 'flex' : 'none';
+      if (bar) {
+        bar.style.display = bar.style.display === 'none' ? 'flex' : 'none';
+        logEvent('Alt+H', bar.style.display === 'none' ? 'HIDE_HINT' : 'TOGGLE_HINT', getCurrentScreenId());
+      }
       return;
     }
 
