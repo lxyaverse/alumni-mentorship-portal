@@ -101,6 +101,7 @@
     if (document.getElementById('trace-hint-bar')) return;
     const bar = document.createElement('div');
     bar.id = 'trace-hint-bar';
+    bar.style.display = 'none'; // Hidden by default; toggle with Alt+? or Alt+A
     bar.innerHTML = `
       <div class="trace-hint-content">
         <span class="trace-hint-btn" onclick="window.TraceOverlay.toggleHelp()" title="Keyboard shortcuts (Alt+?)">⌨ <b>Alt+?</b> for shortcuts</span>
@@ -572,6 +573,13 @@
 
     if (e.key === 'Escape') {
       closeAll();
+      return;
+    }
+
+    if (altCombo === 'Alt+h') {
+      e.preventDefault();
+      const bar = document.getElementById('trace-hint-bar');
+      if (bar) bar.style.display = bar.style.display === 'none' ? 'flex' : 'none';
       return;
     }
 
