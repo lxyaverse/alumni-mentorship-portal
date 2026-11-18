@@ -3,229 +3,136 @@
 **CS314 Software Development Laboratory · Team T069**  
 **The LNM Institute of Information Technology, Jaipur**
 
-The Alumni Mentorship Portal is a web-based platform that connects current students with verified alumni for structured, trackable mentorship. Students can discover mentors by domain and expertise, send requests, schedule sessions, and submit feedback. Alumni can create profiles, manage availability, respond to requests, and conduct sessions through an external meeting link.
+The Alumni Mentorship Portal is a web-based platform that connects current students with verified alumni for structured, trackable mentorship. This prototype features full end-to-end capabilities across all four user classes (**Student**, **Alumnus/Mentor**, **Alumni Relations Coordinator**, **Administrator**) and includes a built-in **Requirements Traceability Overlay** that visualizes SRS alignment in real time on every screen.
 
-This repository contains the working prototype for the project described in the team's SRS v1.0.
+---
 
-## Team
+## Team & SRS Contributions
 
 | Name | Roll number | Primary SRS contribution |
 |---|---|---|
 | **Lakshya Mittal** | 24UCS140 | User classes, system context, functional requirements FR-001–FR-023, business rules |
 | **Aakansha Garg** | 24UCS141 | Non-functional requirements, data requirements, mentorship lifecycle, major use cases |
-| **Sumit Sharma** | 24UCS142 | Requirements traceability, validation, quality criteria, change management, future requirements, versioning |
+| **Sumit Sharma** | 24UCS142 | Requirements traceability, validation, quality criteria, change management, versioning |
 | **Tanishka Khandelwal** | 24UCS143 | Detailed use cases, user stories, acceptance criteria, requirements prioritization |
 
-**Development model:** Agile and incremental development  
-**Course:** Software Engineering (CS314)  
-**Team ID:** T069
+---
 
-## Project vision
+## Live Demo & Requirements Traceability Overlay
 
-Students often need advice about career paths, higher studies, interview preparation, and industry exposure, but informal introductions and one-off messages do not scale. This portal provides one organized place where:
+The portal includes an interactive **Requirements Traceability Overlay** allowing presentation evaluators and users to see which Functional Requirements (FR), Non-Functional Requirements (NFR), Business Rules (BR), and Use Cases (UC) are realized on every prototype screen.
 
-- Students can find alumni who are open to mentoring.
-- Alumni can describe their experience, expertise, and availability.
-- Requests, matching, sessions, and feedback can be tracked.
-- Coordinators can verify alumni and reassign referred requests.
-- Administrators can monitor activity, users, and audit records.
+### Global Keyboard Shortcuts
 
-## Main capabilities
+| Shortcut | Action | Description |
+|---|---|---|
+| <kbd>Alt+F</kbd> | Toggle **FR Overlay** | Badges and outlines (blue) for Functional Requirements; hover for summary |
+| <kbd>Alt+N</kbd> | Toggle **NFR Overlay** | Page-level bar and element chips (green) for security, performance, privacy, etc. |
+| <kbd>Alt+B</kbd> | Toggle **BR Overlay** | Business rule badges (orange) + click to inspect server file/line enforcement |
+| <kbd>Alt+U</kbd> | Toggle **Use Case Panel** | Side panel showing active Use Case, Primary Actor match, and current step highlight |
+| <kbd>Alt+A</kbd> | Toggle **All Overlays** | Turns all overlays on or off simultaneously |
+| <kbd>Alt+T</kbd> | **Traceability Dashboard** | Opens full coverage matrix, live shortcut event feed, and charts |
+| <kbd>Alt+R</kbd> | **Cycle Demo Role** | Instant hotkey to cycle accounts: Student ⇄ Mentor ⇄ Coordinator ⇄ Admin |
+| <kbd>Alt+L</kbd> | **Live Event Log Drawer** | Opens side drawer displaying shortcut execution history |
+| <kbd>Alt+?</kbd> or <kbd>Shift+/</kbd> | **Shortcuts Cheat-Sheet** | Displays the full shortcut table and active screen ID modal |
+| <kbd>Esc</kbd> | **Close All** | Dismisses all drawers, panels, and modals |
 
-### Students
+---
 
-- Register and log in securely.
-- Search mentors by keyword, domain, organization, and expertise.
-- Filter mentors by availability and sort by rating, experience, or availability.
-- View mentor profiles without exposing personal contact details.
-- Send, track, and withdraw mentorship requests.
-- View scheduled sessions and meeting links.
-- Rate completed sessions and leave optional feedback.
-- Receive notifications about request and session activity.
+## Seeded Demo Accounts (Password: `demo123`)
 
-### Alumni mentors
+| Role | Email | Capabilities to Demonstrate |
+|---|---|---|
+| **Student** | `student@demo.com` | Mentor discovery, search/filter, request submission, feedback, sessions |
+| **Alumnus (Mentor)** | `mentor@demo.com` | Profile editing, request inbox (accept/decline/refer), scheduling sessions |
+| **Coordinator** | `coord@demo.com` | Alumni verification queue, referred request reassignment |
+| **Administrator** | `admin@demo.com` | User management & deactivation, category management, system audit log |
+| **Pending Alumnus** | `pending@demo.com` | Demonstrates pending verification state (unverified alumnus) |
 
-- Register for coordinator verification.
-- Create and edit a mentor profile after verification.
-- Add designation, organization, industry, domain, expertise, experience, introduction, capacity, and availability.
-- Accept, decline, or refer student requests.
-- Schedule sessions with date, time, duration, and an external meeting link.
-- Mark sessions complete and view student feedback.
+---
 
-### Coordinators and administrators
-
-- Review and verify or reject alumni accounts.
-- Record a rejection reason.
-- Reassign referred or expired requests to available mentors.
-- View dashboard statistics and audit activity.
-- Manage users and account activation status.
-- Manage mentor categories.
-
-## Technology stack
-
-- **Runtime:** Node.js 18+
-- **Backend:** Express 4
-- **Database:** SQLite using `better-sqlite3`
-- **Authentication:** JWT
-- **Password security:** `bcryptjs`
-- **Frontend:** HTML, CSS, and vanilla JavaScript
-- **API style:** REST endpoints under `/api`
-
-## Architecture
+## Architecture & System Context
 
 ```text
-Browser client (public/)
-        |
-        v
-Express REST API (server.js)
-        |
-        v
-SQLite data access and schema (db.js)
+Browser Client (public/ SPA: app.js, overlay.js, style.css)
+        │  ▲
+        │  │ REST API & Server-Sent Events (SSE /api/trace/stream)
+        ▼  │
+Express REST Server (server.js — RBAC, Business Rules, Rate Limiting, Helmet)
+        │
+        ▼
+SQLite Database (db.js / data/portal.db — WAL mode, Foreign Keys, Parameterized SQL)
 ```
 
-Business rules and role-based access control are enforced on the server. The client is responsible for presentation and calling the API; it does not replace server-side authorization.
+- **Traceability Data Source:** `data/requirements.json` verbatim extracted from SRS v1.0.
+- **Enforcement Scanner:** Server automatically scans `server.js` comments (`// FR-xxx`, `// BR-xxx`) at startup to provide exact file and line references when clicking badges.
+- **Real-Time Push:** Shortcut presses trigger `POST /api/trace/event` and broadcast across open windows using `BroadcastChannel` and `Server-Sent Events` (SSE).
 
-## Project structure
+---
 
-```text
-.
-├── server.js          Express server, REST API, RBAC, and business rules
-├── db.js              SQLite schema, queries, and seed data
-├── public/
-│   ├── index.html     Application shell
-│   ├── app.js         Client-side views and API interactions
-│   └── style.css      Responsive visual design
-├── package.json       Scripts and dependencies
-├── package-lock.json  Locked dependency versions
-├── .env.example       Environment variable template
-└── README.md          Project documentation
-```
+## Requirements Coverage Summary (SRS v1.0 Baseline)
 
-Runtime database files are created under `data/`, which is intentionally excluded from Git.
+| Requirement Type | Total in SRS | Total in Database | Coverage % |
+|---|:---:|:---:|:---:|
+| **Functional Requirements (FR)** | 61 (FR-001..FR-061) | 61 | **100%** |
+| **Non-Functional Requirements (NFR)** | 24 (NFR-001..NFR-024) | 24 | **100%** |
+| **Business Rules (BR)** | 18 (BR-001..BR-018) | 18 | **100%** |
+| **Major Use Cases (UC)** | 20 (UC-001..UC-020) | 20 | **100%** |
 
-## Getting started
+Full coverage matrix is accessible at runtime via `/api/trace/matrix` or the **Traceability Dashboard** (`Alt+T`).
 
-### 1. Install dependencies
+---
 
+## Getting Started
+
+### 1. Prerequisites
+- Node.js 18+ (tested on Node 18, 20, 22)
+- npm 9+
+
+### 2. Install Dependencies
 ```bash
 npm install
 ```
 
-### 2. Configure environment variables
-
-For local development, the defaults work without an `.env` file. To configure a JWT secret:
-
+### 3. Run Application
 ```bash
-copy .env.example .env
-```
-
-On macOS/Linux, use `cp .env.example .env` instead.
-
-### 3. Start the application
-
-```bash
+# Production / Normal mode
 npm start
+
+# Or with DEMO mode enabled (enables session fast-forwarding & role cycling):
+npm run dev
 ```
 
-For the presentation/demo flow, enable the demo-only fast-forward action:
+The portal automatically creates and seeds `data/portal.db` if missing.  
+Open **http://localhost:3000** in your web browser.
 
+### 4. Run Automated Test Suite
 ```bash
-# Windows PowerShell
-$env:DEMO="1"; npm start
-
-# macOS/Linux
-DEMO=1 npm start
+npm test
 ```
+Runs 20 automated tests verifying each Business Rule (`BR-001` through `BR-018`), server-side RBAC, JWT validation, and the Traceability API.
 
-Open [http://localhost:3000](http://localhost:3000).
-
-### 4. Reset demo data
-
+### 5. Reset Seed Data
 ```bash
 npm run seed
 ```
 
-This recreates the seeded portal data in `data/portal.db`.
+---
 
-## Deploy to Vercel
+## Deployment Instructions
 
-Import this repository into Vercel with the project root set to the repository root. The included [`vercel.json`](./vercel.json) routes the browser client from `public/`, exposes the Express API through a serverless function, and pins the function to Node.js 20 for native SQLite compatibility.
+Detailed deployment documentation is provided in [`DEPLOY.md`](./DEPLOY.md).
 
-Add the following environment variables in the Vercel project settings:
+- **Render / Railway (Recommended):** Use persistent disk mounted at `/app/data` with Dockerfile or `render.yaml`.
+- **Local Docker:**
+  ```bash
+  docker build -t alumni-mentorship-portal .
+  docker run -p 3000:3000 -v "$(pwd)/data:/app/data" -e DEMO=1 alumni-mentorship-portal
+  ```
+- **Vercel:** Stateless deployment configured via `vercel.json` (runs against ephemeral `/tmp/portal.db`).
 
-```text
-JWT_SECRET=<a-long-random-secret>
-DEMO=0
-```
+---
 
-The SQLite database uses `/tmp` on Vercel because the deployed project filesystem is read-only. That storage is temporary and instance-local, so this deployment is suitable for a demo only. Use a hosted database for persistent production data.
+## Demo Presentation Guide
 
-## Demo accounts
-
-All seeded demo accounts use the password `demo123`.
-
-| Role | Email | What to demonstrate |
-|---|---|---|
-| Student | `student@demo.com` | Discover mentors, send requests, view sessions, submit feedback |
-| Mentor | `mentor@demo.com` | Manage profile, respond to requests, schedule sessions |
-| Coordinator | `coord@demo.com` | Verify alumni and reassign referred requests |
-| Administrator | `admin@demo.com` | View dashboard, manage users, inspect audit activity |
-| Pending alumnus | `pending@demo.com` | Demonstrate the verification-pending state |
-
-## Typical demo flow
-
-1. Log in as the seeded student.
-2. Open **Find your mentor** and search or filter the mentor list.
-3. Send a request with a topic, goal, and preferred time.
-4. Log in as the mentor and accept the request.
-5. Schedule a session using an external meeting link.
-6. Use `DEMO=1` to fast-forward the session during a presentation.
-7. Log back in as the student and submit a rating and feedback.
-8. Use the coordinator and administrator accounts to demonstrate verification, dashboard, and audit features.
-
-## API overview
-
-| Area | Representative endpoints |
-|---|---|
-| Authentication | `POST /api/register`, `POST /api/login`, `GET /api/me` |
-| Mentors and profiles | `GET /api/mentors`, `GET/PUT /api/profile`, `GET /api/cats` |
-| Requests | `POST /api/requests`, `GET /api/requests`, request withdraw/respond/reassign routes |
-| Sessions | `POST /api/sessions`, `GET /api/sessions`, complete/cancel routes |
-| Feedback | `POST /api/feedback` |
-| Notifications | `GET /api/notifications`, `GET /api/notifications/count` |
-| Staff operations | Verification, statistics, users, categories, and audit routes |
-
-## Scope and limitations
-
-### Included in this prototype
-
-Authentication, role-based access, account deactivation, alumni verification, mentor profiles, discovery, requests, matching/reassignment, session scheduling and tracking, feedback, notifications, dashboard statistics, and audit logging.
-
-### Not currently included
-
-- Email delivery and password-reset links
-- Automated test suite
-- Rate limiting, Helmet, and production HTTPS configuration
-- In-app video/audio calling
-- Real-time chat
-- Payment or paid mentorship
-- Mobile application
-- Institute alumni database integration
-- Calendar integration, advanced analytics, resume review, and job-referral tracking
-
-Sessions currently use an external meeting URL entered by the mentor.
-
-## Security notes
-
-This is an academic prototype intended for local demonstration. Before production deployment:
-
-- Set a strong, private `JWT_SECRET`.
-- Run behind HTTPS.
-- Add security headers such as Helmet.
-- Add rate limiting and account recovery flows.
-- Use a managed database and secure secret storage.
-- Review privacy, logging, and data-retention requirements.
-
-## License
-
-This project is released under the MIT license.
+Follow the step-by-step walkthrough in [`DEMO_SCRIPT.md`](./DEMO_SCRIPT.md) for a complete 7-minute presentation covering student, mentor, coordinator, and administrator flows with shortcut timestamps.
