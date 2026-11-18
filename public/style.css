@@ -185,6 +185,46 @@ input:focus, textarea:focus, select:focus {
 }
 .row input, .row select { width: auto; }
 #who { display: flex; align-items: center; gap: 8px; }
+
+.notification-button {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--bd);
+  background: #fff;
+  color: var(--tx);
+}
+.notification-button svg {
+  width: 21px;
+  height: 21px;
+  fill: currentColor;
+}
+.notification-button.has-unread {
+  color: var(--pr);
+  border-color: #b9dce2;
+  background: #edf8fa;
+}
+.notification-badge {
+  position: absolute;
+  top: -6px;
+  right: -7px;
+  min-width: 21px;
+  height: 21px;
+  padding: 0 5px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 800;
+}
 .page-heading { margin: 0 0 20px; }
 .page-heading h2 { font-size: 30px; letter-spacing: -.03em; margin: 4px 0 2px; }
 .eyebrow {

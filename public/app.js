@@ -78,6 +78,15 @@ const go = t => {
 };
 window.go = go;
 
+async function openNotifications() {
+  try {
+    await api('GET', '/notifications');
+  } catch (e) {}
+  tab = 'notes';
+  render();
+}
+window.openNotifications = openNotifications;
+
 // Action handlers
 const withdraw = id => act('POST', `/requests/${id}/withdraw`, null, 'Request withdrawn.');
 const respond = (id, action) => {
@@ -873,7 +882,12 @@ async function render() {
     $('#who').innerHTML = `
       ${esc(user.name)}
       <span class="tag">${user.role}</span>
-      <span class="tag">🔔 ${n}</span>
+      <button class="notification-button${n ? ' has-unread' : ''}" onclick="openNotifications()" aria-label="Notifications${n ? `, ${n} unread` : ', no unread notifications'}" title="Notifications">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M18 16v-5a6 6 0 0 0-4.8-5.88V4a1.2 1.2 0 0 0-2.4 0v1.12A6 6 0 0 0 6 11v5l-2 2v1h16v-1l-2-2Zm-6 5a2.2 2.2 0 0 0 2.18-1.88h-4.36A2.2 2.2 0 0 0 12 21Z"/>
+        </svg>
+        ${n ? `<span class="notification-badge">${n > 99 ? '99+' : n}</span>` : ''}
+      </button>
       <button class="d" onclick="logout()">Log out</button>
     `;
 
