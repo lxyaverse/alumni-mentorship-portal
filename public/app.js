@@ -778,47 +778,51 @@ function vAuth() {
 
     <div class="auth-grid">
       <div class="card">
-        <h3>Sign In (UC-003 / FR-004)</h3>
-        <p class="mu">Authenticate to access role-based mentorship features.</p>
-        <label>Email Address</label>
-        <input id="le" data-trace="FR-004" placeholder="you@example.com">
-        <label>Password</label>
-        <input id="lp" data-trace="FR-004" type="password" placeholder="••••••••"><br><br>
-        <button class="p" onclick="login(val('le'),val('lp'))">Log in</button>
+        <form onsubmit="event.preventDefault();login(val('le'),val('lp'))">
+          <h3>Sign In (UC-003 / FR-004)</h3>
+          <p class="mu">Authenticate to access role-based mentorship features.</p>
+          <label>Email Address</label>
+          <input id="le" data-trace="FR-004" type="email" required placeholder="you@example.com">
+          <label>Password</label>
+          <input id="lp" data-trace="FR-004" type="password" required placeholder="••••••••"><br><br>
+          <button class="p" type="submit">Log in</button>
+        </form>
 
-        <p class="mu" style="margin-top:18px"><b>Seeded Demo Accounts (password: demo123):</b></p>
+        <p class="mu" style="margin-top:18px">Click to fill credentials:</p>
         <div class="row">
           ${[
             ['Student', 'student@demo.com'],
             ['Mentor', 'mentor@demo.com'],
             ['Coordinator', 'coord@demo.com'],
             ['Admin', 'admin@demo.com']
-          ].map(([n, e]) => `<button onclick="login('${e}','demo123')">${n}</button>`).join('')}
+          ].map(([n, e]) => `<button type="button" onclick="$('#le').value='${e}';$('#lp').value='demo123';$('#le').focus();">${n}</button>`).join('')}
         </div>
       </div>
 
       <div class="card">
-        <h3>Create Account (UC-001 / FR-001)</h3>
-        <p class="mu">Alumni registrations are placed in pending verification state (FR-002).</p>
-        <label>Full name</label>
-        <input id="rn" data-trace="FR-001" placeholder="Your full name">
-        <label>Email</label>
-        <input id="re" data-trace="FR-001" placeholder="you@example.com">
-        <label>Password (min 6)</label>
-        <input id="rp" data-trace="FR-001" type="password">
-        <label>Role</label>
-        <select id="rr" data-trace="FR-001">
-          <option value="student">Student</option>
-          <option value="alumnus">Alumnus</option>
-        </select>
-        <label>Alumni only: graduation year / degree / organization (FR-002)</label>
-        <div class="row">
-          <input id="rg" data-trace="FR-002" type="number" placeholder="2020">
-          <input id="rd" data-trace="FR-002" placeholder="B.Tech CSE">
-          <input id="ro" data-trace="FR-002" placeholder="Google">
-        </div>
-        <br>
-        <button onclick="register()">Create Account</button>
+        <form onsubmit="event.preventDefault();register()">
+          <h3>Create Account (UC-001 / FR-001)</h3>
+          <p class="mu">Alumni registrations are placed in pending verification state (FR-002).</p>
+          <label>Full name *</label>
+          <input id="rn" data-trace="FR-001" required placeholder="Your full name">
+          <label>Email *</label>
+          <input id="re" data-trace="FR-001" type="email" required placeholder="you@example.com">
+          <label>Password (min 6) *</label>
+          <input id="rp" data-trace="FR-001" type="password" required minlength="6">
+          <label>Role</label>
+          <select id="rr" data-trace="FR-001">
+            <option value="student">Student</option>
+            <option value="alumnus">Alumnus</option>
+          </select>
+          <label>Alumni only: graduation year / degree / organization (FR-002)</label>
+          <div class="row">
+            <input id="rg" data-trace="FR-002" type="number" placeholder="2020">
+            <input id="rd" data-trace="FR-002" placeholder="B.Tech CSE">
+            <input id="ro" data-trace="FR-002" placeholder="Google">
+          </div>
+          <br>
+          <button type="submit">Create Account</button>
+        </form>
       </div>
     </div>
   </div>`;
