@@ -98,7 +98,7 @@
     if (document.getElementById('trace-hint-bar')) return;
     const bar = document.createElement('div');
     bar.id = 'trace-hint-bar';
-    bar.style.display = 'none'; // Hidden by default; toggle with Alt+? or Alt+A
+    bar.style.display = 'flex';
     bar.innerHTML = `
       <div class="trace-hint-content">
         <span class="trace-hint-btn" onclick="window.TraceOverlay.toggleHelp()" title="Keyboard shortcuts (Alt+?)">⌨ <b>Alt+?</b> for shortcuts</span>
