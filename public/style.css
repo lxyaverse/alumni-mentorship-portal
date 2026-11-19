@@ -339,6 +339,7 @@ td, th {
 
 /* Persistent Bottom Hint Bar */
 #trace-hint-bar {
+  display: none !important;
   position: fixed;
   bottom: 0;
   left: 0;
@@ -505,6 +506,22 @@ td, th {
   display: none;
   overflow-y: auto;
   padding-bottom: 70px;
+}
+
+body.trace-sidebar-open > header,
+body.trace-sidebar-open > main {
+  width: calc(100% - 440px);
+  transition: width 180ms ease;
+}
+
+body.trace-sidebar-open > header {
+  box-sizing: border-box;
+}
+
+body.trace-sidebar-open > main {
+  margin-left: 0;
+  margin-right: 440px;
+  max-width: none;
 }
 
 .trace-panel-header {
@@ -717,6 +734,13 @@ td, th {
 @media(max-width: 720px) {
   #trace-uc-panel, #trace-detail-drawer, #trace-event-drawer {
     width: 100vw;
+  }
+  body.trace-sidebar-open > header,
+  body.trace-sidebar-open > main {
+    width: 100%;
+  }
+  body.trace-sidebar-open > main {
+    margin-right: 0;
   }
   .trace-hint-content {
     font-size: 11px;

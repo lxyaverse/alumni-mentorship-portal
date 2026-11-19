@@ -95,23 +95,7 @@
 
   // Render floating hint bar and legend
   function ensureHintBar() {
-    if (document.getElementById('trace-hint-bar')) return;
-    const bar = document.createElement('div');
-    bar.id = 'trace-hint-bar';
-    bar.style.display = 'flex';
-    bar.innerHTML = `
-      <div class="trace-hint-content">
-        <span class="trace-hint-btn" onclick="window.TraceOverlay.toggleHelp()" title="Keyboard shortcuts (Alt+?)">⌨ <b>Alt+?</b> for shortcuts</span>
-        <span class="trace-pill fr-pill ${overlayState.fr ? 'on' : ''}" onclick="window.TraceOverlay.toggle('fr')">FR (Alt+F)</span>
-        <span class="trace-pill nfr-pill ${overlayState.nfr ? 'on' : ''}" onclick="window.TraceOverlay.toggle('nfr')">NFR (Alt+N)</span>
-        <span class="trace-pill br-pill ${overlayState.br ? 'on' : ''}" onclick="window.TraceOverlay.toggle('br')">BR (Alt+B)</span>
-        <span class="trace-pill uc-pill ${overlayState.uc ? 'on' : ''}" onclick="window.TraceOverlay.toggle('uc')">Use Cases (Alt+U)</span>
-        <span class="trace-pill all-pill" onclick="window.TraceOverlay.toggleAll()">All (Alt+A)</span>
-        <span class="trace-pill dash-pill" onclick="window.TraceOverlay.openDashboard()">Dashboard (Alt+T)</span>
-        <span class="trace-pill role-pill" onclick="window.TraceOverlay.cycleRole()" title="Cycle demo role (Alt+R)">Role ⇄ (Alt+R)</span>
-      </div>
-    `;
-    document.body.appendChild(bar);
+    document.getElementById('trace-hint-bar')?.remove();
   }
 
   // Render floating screen counts legend
@@ -251,6 +235,19 @@
   }
 
   // Use Case side panel
+  function syncSidebarLayout() {
+    if (window.innerWidth <= 720) {
+      document.body.classList.remove('trace-sidebar-open');
+      return;
+    }
+    const ids = ['trace-uc-panel', 'trace-detail-drawer', 'trace-event-drawer'];
+    const open = ids.some(id => {
+      const el = document.getElementById(id);
+      return el && window.getComputedStyle(el).display !== 'none';
+    });
+    document.body.classList.toggle('trace-sidebar-open', open);
+  }
+
   async function renderUseCasePanel(data) {
     let panel = document.getElementById('trace-uc-panel');
     if (!panel) {
@@ -259,6 +256,7 @@
       document.body.appendChild(panel);
     }
     panel.style.display = 'block';
+    syncSidebarLayout();
 
     const tok = localStorage.getItem('amp-token');
     let allUcs = [];
@@ -344,6 +342,7 @@
   function closeUseCasePanel() {
     const panel = document.getElementById('trace-uc-panel');
     if (panel) panel.style.display = 'none';
+    syncSidebarLayout();
   }
 
   // Requirement Detail Drawer (Click-through)
@@ -355,6 +354,8 @@
       document.body.appendChild(drawer);
     }
     drawer.style.display = 'block';
+    syncSidebarLayout();
+    window.addEventListener('resize', syncSidebarLayout);
 
     const tok = localStorage.getItem('amp-token');
     let reqInfo = null;
@@ -378,7 +379,7 @@
           <h3><span class="trace-badge ${type.toLowerCase()}">${id}</span> ${escapeHtml(reqInfo.title)}</h3>
           <span class="trace-dim">Category: ${escapeHtml(reqInfo.category || type)} · Priority: <b>${escapeHtml(reqInfo.priority || 'Medium')}</b></span>
         </div>
-        <button class="trace-close-btn" onclick="document.getElementById('trace-detail-drawer').style.display='none'">✕</button>
+        <button class="trace-close-btn" onclick="window.TraceOverlay.closeDetail()">✕</button>
       </div>
       <div class="trace-panel-body">
         <div class="trace-sec-title">Full SRS Specification Text:</div>
@@ -519,10 +520,17 @@
     overlayState.nfr = newVal;
     overlayState.br = newVal;
     overlayState.uc = newVal;
+    if (!newVal) {
+      const detailDrawer = document.getElementById('trace-detail-drawer');
+      if (detailDrawer) detailDrawer.style.display = 'none';
+      const eventDrawer = document.getElementById('trace-event-drawer');
+      if (eventDrawer) eventDrawer.style.display = 'none';
+    }
     saveState();
     announce(`All overlays ${newVal ? 'enabled' : 'disabled'}`);
     logEvent('Alt+A', 'TOGGLE_ALL', getCurrentScreenId());
     applyOverlays();
+    syncSidebarLayout();
   }
 
   // Open Traceability Dashboard
@@ -549,6 +557,7 @@
     if (detailDrawer) detailDrawer.style.display = 'none';
     const logDrawer = document.getElementById('trace-event-drawer');
     if (logDrawer) logDrawer.style.display = 'none';
+    syncSidebarLayout();
     announce('All overlays closed');
     applyOverlays();
   }

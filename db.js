@@ -76,6 +76,12 @@ CREATE TABLE IF NOT EXISTS email_outbox(
   sent INTEGER DEFAULT 0,
   created INTEGER
 );
+CREATE TABLE IF NOT EXISTS password_reset_tokens(
+  token_hash TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id),
+  expires INTEGER NOT NULL,
+  used INTEGER DEFAULT 0
+);
 `);
 
 // ---- Indexes ----
@@ -89,6 +95,7 @@ CREATE INDEX IF NOT EXISTS idx_notes_uid ON notes(uid);
 CREATE INDEX IF NOT EXISTS idx_shortcut_events_ts ON shortcut_events(ts);
 CREATE INDEX IF NOT EXISTS idx_trace_links_screen ON trace_links(screen_id);
 CREATE INDEX IF NOT EXISTS idx_trace_links_ref ON trace_links(ref_id);
+CREATE INDEX IF NOT EXISTS idx_password_reset_user ON password_reset_tokens(user_id);
 `);
 
 // ---- Seed ----

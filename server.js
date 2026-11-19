@@ -3,6 +3,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
 const helmet = require('helmet');
@@ -100,6 +101,65 @@ app.post('/api/login', wrap((req, res) => { // FR-004, FR-005, UC-003
   res.json({ token: jwt.sign({ id: u.id }, SECRET, { expiresIn: '8h' }), user: pub(u) }); // NFR-008
 }));
 
+// ---- Account settings & password recovery ----
+app.get('/api/account', auth(), (req, res) => {
+  res.json({ id: req.u.id, name: req.u.name, email: req.u.email, role: req.u.role });
+});
+
+app.patch('/api/account', auth(), wrap((req, res) => {
+  const name = String(req.body?.name || '').trim();
+  if (!name) return bad(res, 'Name is required.');
+  run('UPDATE users SET name=? WHERE id=?', name, req.u.id);
+  res.json({ ok: true, name });
+}));
+
+app.post('/api/account/password', auth(), wrap((req, res) => {
+  const currentPassword = String(req.body?.currentPassword || '');
+  const newPassword = String(req.body?.newPassword || '');
+  if (!bcrypt.compareSync(currentPassword, req.u.pw)) {
+    return bad(res, 'Current password is incorrect.', 401);
+  }
+  if (newPassword.length < 6) return bad(res, 'New password must be at least 6 characters.');
+  run('UPDATE users SET pw=? WHERE id=?', bcrypt.hashSync(newPassword, 10), req.u.id);
+  res.json({ ok: true, message: 'Password changed successfully.' });
+}));
+
+app.post('/api/forgot-password', wrap((req, res) => {
+  const email = String(req.body?.email || '').trim().toLowerCase();
+  const user = q1('SELECT * FROM users WHERE email=?', email);
+  const response = { ok: true, message: 'If the account exists, a reset link was sent.' };
+
+  if (user) {
+    const token = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    run('DELETE FROM password_reset_tokens WHERE user_id=?', user.id);
+    run('INSERT INTO password_reset_tokens(token_hash,user_id,expires) VALUES(?,?,?)',
+      tokenHash, user.id, now() + 30 * 60 * 1000);
+    run('INSERT INTO email_outbox(id,to_email,subject,body,sent,created) VALUES(?,?,?,?,0,?)',
+      nid('e'), user.email, 'Password reset', `Password reset token: ${token}`, now());
+    if (DEMO) response.demoToken = token;
+  }
+
+  res.json(response);
+}));
+
+app.post('/api/reset-password', wrap((req, res) => {
+  const token = String(req.body?.token || '').trim();
+  const password = String(req.body?.password || '');
+  if (!token || password.length < 6) {
+    return bad(res, 'A valid token and password of at least 6 characters are required.');
+  }
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  const row = q1('SELECT * FROM password_reset_tokens WHERE token_hash=? AND used=0', tokenHash);
+  if (!row || row.expires < now()) return bad(res, 'Reset link is invalid or expired.');
+
+  db.transaction(() => {
+    run('UPDATE users SET pw=? WHERE id=?', bcrypt.hashSync(password, 10), row.user_id);
+    run('UPDATE password_reset_tokens SET used=1 WHERE token_hash=?', tokenHash);
+  })();
+  res.json({ ok: true, message: 'Password updated successfully.' });
+}));
+
 app.get('/api/me', auth(), (req, res) => res.json(pub(req.u)));
 app.get('/api/cats', auth(), (req, res) => res.json(qa('SELECT name FROM cats ORDER BY name').map(c => c.name))); // FR-060
 
@@ -135,7 +195,7 @@ app.get('/api/mentors', auth('student', 'alumnus', 'coordinator', 'admin'), (req
 });
 
 app.get('/api/mentor/:id', auth(), (req, res) => { // FR-022, BR-016
-  const p = q1("SELECT p.*,u.name FROM profiles p JOIN users u ON u.id=p.uid WHERE p.uid=? AND u.status='verified' AND p.complete=1", req.params.id);
+  const p = q1("SELECT p.*,u.name FROM profiles p JOIN users traceabu ON u.id=p.uid WHERE p.uid=? AND u.status='verified' AND p.complete=1", req.params.id);
   if (!p) return bad(res, 'Mentor not found', 404);
   res.json({ uid: p.uid, name: p.name, designation: p.designation, org: p.org, industry: p.industry, domain: p.domain,
     expertise: p.expertise, years: p.years, grad: p.grad, intro: p.intro, avail: p.avail, cap: p.cap,
