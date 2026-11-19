@@ -83,11 +83,20 @@ function pushSSE(data) {
 app.post('/api/register', wrap((req, res) => { // FR-001, FR-002, UC-001
   const { name, email, password, role, grad, degree, org } = req.body || {};
   if (!name || !email || !password) return bad(res, 'Name, email and password are required.');
+
   if (password.length < 6) return bad(res, 'Password must be at least 6 characters.');
+  let k=false;
+  for(let i=0;i<password.length;i++){
+    if((password[i]>'a' && password[i]<'z') || (password[i]>'A' && password[i]<'Z') || (password[i]>'0' && password[i]<'9')) continue;
+    k=true;
+  }
+  if(!k) return bad(res, 'Password should contain a special character');
+
+  if (!/^[A-Z]/.test(password)) return bad(res, 'Password must start with a capital letter.');
   if (!['student', 'alumnus'].includes(role)) return bad(res, 'Role must be student or alumnus.');
   if (role === 'alumnus' && (!grad || !String(degree || '').trim() || !String(org || '').trim()))
     return bad(res, 'Graduation year, degree and current organization are required for alumni registration.');
-  if (q1('SELECT 1 FROM users WHERE email=?', email.toLowerCase())) return bad(res, 'Email already registered.', 409);
+  if (q1('SELECT 1 FROM users WHERE email=?', email.toLowerCase().trim())) return bad(res, 'Email already registered.', 409);
   run('INSERT INTO users(id,name,email,pw,role,status,grad,degree,org) VALUES(?,?,?,?,?,?,?,?,?)',
     nid('u'), name.trim(), email.toLowerCase().trim(), bcrypt.hashSync(password, 10), role,
     role === 'alumnus' ? 'pending' : null, grad || null, degree || null, org || null); // FR-002
@@ -119,7 +128,7 @@ app.post('/api/account/password', auth(), wrap((req, res) => {
   if (!bcrypt.compareSync(currentPassword, req.u.pw)) {
     return bad(res, 'Current password is incorrect.', 401);
   }
-  if (newPassword.length < 6) return bad(res, 'New password must be at least 6 characters.');
+  if (newPassword.length < 8) return bad(res, 'New password must be at least 8 characters.');
   run('UPDATE users SET pw=? WHERE id=?', bcrypt.hashSync(newPassword, 10), req.u.id);
   res.json({ ok: true, message: 'Password changed successfully.' });
 }));
@@ -146,8 +155,9 @@ app.post('/api/forgot-password', wrap((req, res) => {
 app.post('/api/reset-password', wrap((req, res) => {
   const token = String(req.body?.token || '').trim();
   const password = String(req.body?.password || '');
-  if (!token || password.length < 6) {
-    return bad(res, 'A valid token and password of at least 6 characters are required.');
+  if (!token) return bad(res, 'A valid reset token is required.');
+  if (password.length < 7) {
+    return bad(res, 'A valid token and password of at least 7 characters are required.');
   }
   const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
   const row = q1('SELECT * FROM password_reset_tokens WHERE token_hash=? AND used=0', tokenHash);
@@ -422,6 +432,16 @@ app.get('/api/stats', auth(...staff), (req, res) => { // FR-059, UC-020
 app.get('/api/users', auth('admin'), (req, res) => // FR-057, UC-004
   res.json(qa('SELECT id,name,email,role,status,active FROM users ORDER BY role,name')));
 
+// Safe database overview for the admin dashboard. Password hashes are never returned.
+app.get('/api/database', auth('admin'), (req, res) => {
+  const tables = qa("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
+    .map(({ name }) => {
+      const safeName = String(name).replace(/"/g, '""');
+      return { name, rows: q1(`SELECT COUNT(*) c FROM "${safeName}"`).c };
+    });
+  res.json({ database: 'data/portal.db', tables });
+});
+
 app.post('/api/users/:id/toggle', auth('admin'), wrap((req, res) => { // FR-010, BR-017, BR-018, UC-004
   const u = q1('SELECT * FROM users WHERE id=?', req.params.id);
   if (!u || u.id === req.u.id) return bad(res, 'Cannot change this account.', 409);
@@ -650,12 +670,8 @@ if (require.main === module) {
     console.log(`\n🎓 Alumni Mentorship Portal v2.0`);
     console.log(`   URL:  http://localhost:${PORT}`);
     console.log(`   Mode: ${DEMO ? '🟡 DEMO' : 'Normal'}`);
-    console.log(`\n   Demo accounts (password: demo123):`);
-    console.log(`     Student:     student@demo.com`);
-    console.log(`     Mentor:      mentor@demo.com`);
-    console.log(`     Coordinator: coord@demo.com`);
-    console.log(`     Admin:       admin@demo.com`);
-    console.log(`\n   Traceability: Alt+F/N/B/U/A/T/?  (press Alt+? on any screen)\n`);
+
+
   });
 
   // Graceful shutdown
